@@ -9,9 +9,9 @@ const userSignupSchema = zod.object({
 
      age : zod.number({message: "format number is required in the age field"}).min(16,{message:"minimum 16 years required to signup"}),
 
-     firstName : zod.string().min(3,{message: "minimum 3 characters are required in the firstName field"}),
-     lastName : zod.string().min(2, {message : "minimum 2 characters required in the last Name field"})
+     firstName : zod.string().min(2,{message: "minimum 3 characters are required in the firstName field"}),
 
+     lastName : zod.string().min(2, {message : "minimum 2 characters required in the last Name field"}).optional()
 });
 
 const userSigninSchema = zod.object({
