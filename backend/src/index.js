@@ -5,6 +5,7 @@ const app = express();
 const port = 3000;
 const authRouter = require("./routes/authRoutes");
 const profileRouter = require("./routes/profileRoutes");
+const connectionRequestRouter = require("./routes/connectionRequestRoutes");
 const  mongoose = require("mongoose");
 
 
@@ -20,14 +21,13 @@ async function connectDb(){
          console.log("failed to connect to the database : ",err.message);
      }
 }
-
 connectDb();
 
 app.use(cookieParser(),express.json());
 
-
 app.use("/",authRouter);
 app.use("/",profileRouter);
+app.use("/",connectionRequestRouter);
 
 app.use((err,req,res,next)=>{
      if(err){
