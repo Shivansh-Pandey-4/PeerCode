@@ -18,6 +18,8 @@ const connectionRequestSchema = new mongoose.Schema({
      }
 }, {timestamps : true});
 
+connectionRequestSchema.index({toUserId : 1, fromUserId : 1});
+
 connectionRequestSchema.pre("save", function(next){
       if(this.fromUserId.equals(this.toUserId)){
             const err = new Error("bad connection request: user cannot send connection request to itself ");
