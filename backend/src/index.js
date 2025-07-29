@@ -6,6 +6,7 @@ const port = 3000;
 const authRouter = require("./routes/authRoutes");
 const profileRouter = require("./routes/profileRoutes");
 const connectionRequestRouter = require("./routes/connectionRequestRoutes");
+const userRouter = require("./routes/userRoutes");
 const  mongoose = require("mongoose");
 
 
@@ -28,6 +29,8 @@ app.use(cookieParser(),express.json());
 app.use("/",authRouter);
 app.use("/",profileRouter);
 app.use("/",connectionRequestRouter);
+app.use("/",userRouter);
+
 
 app.use((err,req,res,next)=>{
      if(err){
