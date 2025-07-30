@@ -1,6 +1,7 @@
 const express = require("express");
 const cookieParser = require("cookie-parser");
-require('dotenv').config({path : "../.env"})
+require('dotenv').config({path : "../.env"});
+const cors = require("cors");
 const app = express();
 const port = 3000;
 const authRouter = require("./routes/authRoutes");
@@ -24,7 +25,7 @@ async function connectDb(){
 }
 connectDb();
 
-app.use(cookieParser(),express.json());
+app.use(cors(),cookieParser(),express.json());
 
 app.use("/",authRouter);
 app.use("/",profileRouter);
