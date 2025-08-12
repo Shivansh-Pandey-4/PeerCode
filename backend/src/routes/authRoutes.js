@@ -102,7 +102,7 @@ router.post("/signin",async(req,res)=>{
 })
 
 router.post("/logout", (req,res)=>{
-         res.clearCookie("token");
+         res.clearCookie("token",{httpOnly: true});
          return res.send({
              msg : "Logout successfully"
          })
