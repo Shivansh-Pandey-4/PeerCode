@@ -1,5 +1,5 @@
-import { useState , useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState  } from "react";
+import { useNavigate , Link } from "react-router-dom";
 import {toast} from "react-toastify";
 
 
@@ -14,15 +14,15 @@ const Login = () => {
            const response = await fetch("http://localhost:3000/signin",{
                  method : "POST",
                  headers : {
-                     "Content-Type" : "application/json",
-                      credentials: "include"
-                 },
+                     "Content-Type" : "application/json"
+                    },
+                 credentials: "include",
                  body : JSON.stringify({email,password})
            })
          
            const data = await response.json();
            if(data.msg == "user logged in successfully"){
-                toast.success("🎯Login successful! Redirecting to Home... 📊");
+                toast.success("🎯Login successful! Redirected to Home... 📊");
                 navigate("/");
                 return ;
            }else {
@@ -60,13 +60,17 @@ const Login = () => {
 
 
   return (
-    <div className="min-h-screen flex justify-center mt-20 ">
+    <div className="min-h-screen flex justify-center mt-10 ">
         <form onSubmit={handleInput}  >
-            <fieldset className="fieldset bg-base-300 border-gray-600 rounded-box w-xs border p-4">
+            <fieldset className="fieldset bg-base-300 border-gray-600 rounded-box w-xs border px-4 pt-0">
+            <Link to={"/signup"}>
+               <button className="text-2xl mb-3 ml-4 text-blue-500 cursor-pointer hover:text-blue-600">Don't have an account?</button>
+            </Link>
+
             <legend className="fieldset-legend text-4xl text-center mb-5">Login</legend>
 
             <label className="label text-xl mb-2">Email</label>
-            <input required type="email" className="input" placeholder="Email" value={email} onChange={(event)=>setEmail(event.target.value)} />
+            <input autoFocus required type="email" className="input" placeholder="Email" value={email} onChange={(event)=>setEmail(event.target.value)} />
 
             <label className="label mt-8 text-xl mb-2">Password</label>
             <input required type="password" className="input" placeholder="Password" value={password} onChange={(event)=>setPassword(event.target.value)} />
