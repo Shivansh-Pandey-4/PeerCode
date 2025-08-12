@@ -11,6 +11,13 @@ const userRouter = require("./routes/userRoutes");
 const  mongoose = require("mongoose");
 
 
+const corsOptions = {
+  origin: "http://localhost:5173", 
+  credentials: true 
+};
+
+app.use(cors(corsOptions));
+app.use(cookieParser(),express.json());
 
 async function connectDb(){
      try{
@@ -25,7 +32,7 @@ async function connectDb(){
 }
 connectDb();
 
-app.use(cors(),cookieParser(),express.json());
+
 
 app.use("/",authRouter);
 app.use("/",profileRouter);
