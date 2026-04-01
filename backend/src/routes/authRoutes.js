@@ -1,84 +1,88 @@
 const express = require("express");
-const {userSigninSchema,userSignupSchema} = require("../zod-validation/userSchema");
-const router = express.Router();
-const UserModel = require("../models/UserModel");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 
+const UserModel = require("../models/UserModel");
+const {userSigninSchema,userSignupSchema} = require("../zod-validation/userSchema");
+
+const router = express.Router();
 
 
 router.post("/signup", async(req,res)=>{
-    const {firstName,lastName,gender,email,password,age} = req.body;
 
-    const response = userSignupSchema.safeParse(req.body);
+    const result = userSignupSchema.safeParse(req.body);
 
-    if(!response.success){
-         return res.status(400).send({
+    if(!result.success){
+         return res.status(400).json({
+             success : false,
              msg : "invalid credential format",
-             detailError : response.error
+             error : result.error.issues
          })
     }
 
-
      try{
+          const {firstName, lastName, email, password} = result.data;
 
           const userExist = await UserModel.findOne({email});
           if(userExist){
-              return res.status(400).send({
+              return res.status(400).json({
+                 success : false,
                  msg : "email should be unique"
               })
           }
 
           const hashedPassword = await bcrypt.hash(password,10);
-          const newUser = await UserModel.create({
-             firstName,lastName,age , email, password : hashedPassword, gender
-          });
+          const newUser = await UserModel.create({firstName, lastName, email, password : hashedPassword});
 
           const token = jwt.sign({user_id : newUser._id, name : newUser.firstName}, process.env.USER_JWT_SECRET, {expiresIn : "1d"});
 
-          if(!newUser || !token){
-              return res.status(500).send({
-                 msg : "Internal server error during signup"
-              })
+          if(!token){
+              throw new Error("failed to generate jwt token");
           }
 
-          res.cookie("token",token,{httpOnly: true , maxAge : 24*60*60*1000});
-          return res.send({
-             msg : "user signed up successfully" 
+          res.cookie("token", token, {httpOnly: true , maxAge : 24*60*60*1000});
+
+          return res.json({
+             success : true,
+             msg : "user signed up successfully",
+             newUser
           })
 
      }catch(err){
-         return res.status(500).send({
+         return res.status(500).json({
+             success : false,
              msg : "server issue",
-             detailError : err.message
+             error : err.message
          })
      }
 })
 
 router.post("/signin",async(req,res)=>{
-     const {email, password} = req.body;
 
-     const response = userSigninSchema.safeParse(req.body);
+     const result = userSigninSchema.safeParse(req.body);
 
-     if(!response.success){
-         return res.status(400).send({
+     if(!result.success){
+         return res.status(400).json({
+             success : false,
              msg : "invalid credential format",
-             detailError : response.error
+             error : result.error.issues
          })
      }
 
      try{
         const userExist = await UserModel.findOne({email});
         if(!userExist){
-             return res.status(400).send({
-                 msg : "invalid username or password"
+             return res.status(400).json({
+                 success : false,
+                 msg : "invalid email or password"
              })
         }
 
         const passwordVerify = await bcrypt.compare(password,userExist.password);
         if(!passwordVerify){
-             return res.status(400).send({
-                 msg : "invalid username or password"
+             return res.status(400).json({
+                 success : false,
+                 msg : "invalid email or password"
              })
         }
 
@@ -89,21 +93,26 @@ router.post("/signin",async(req,res)=>{
         }
 
         res.cookie("token", token, {httpOnly : true, maxAge :24*60*60*1000})
-        return res.send({
+        return res.json({
+             success : true,
              msg : "user logged in successfully",
+             userExist
         })
 
      }catch(err){
-         return res.status(500).send({
-             msg : "user login failed",
-             detailError : err.message
+         return res.status(500).json({
+             success : false,
+             msg : "user failed to login",
+             error : err.message
          })
      }
 })
 
 router.post("/logout", (req,res)=>{
          res.clearCookie("token",{httpOnly: true});
-         return res.send({
+
+         return res.json({
+             success : true,
              msg : "Logout successfully"
          })
 })

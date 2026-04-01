@@ -1,22 +1,22 @@
 const zod = require("zod");
 
 const userSignupSchema = zod.object({
-     email : zod.string().email({message: "invalid email format"}),
+     email : zod.string().trim().email({message: "invalid email format"}),
 
-     password : zod.string().min(6,{message: "minimum 6 characters required in password field"}).max(50,{message: "maximum 50 characters are allowed in the password field"}),
+     password : zod.string().trim().min(6,{message: "minimum 6 characters required in password field"}).max(50,{message: "maximum 50 characters are allowed in the password field"}),
 
-     gender : zod.enum(["female","male","others"]),
+     gender : zod.enum(["female","male","others"]).optional(),
 
-     age : zod.number({message: "format number is required in the age field"}).min(16,{message:"minimum 16 years required to signup"}),
+     age : zod.number({message: "format number is required in the age field"}).min(16,{message:"minimum 16 years required to signup"}).optional(),
 
-     firstName : zod.string().min(2,{message: "minimum 3 characters are required in the firstName field"}).max(50,{message: "firstName can 50 characters long only"}),
+     firstName : zod.string().trim().min(2,{message: "minimum 3 characters are required in the firstName field"}).max(50,{message: "firstName can 50 characters long only"}),
 
-     lastName : zod.string().min(2, {message : "minimum 2 characters required in the last Name field"}).max(50,{message : "lastName can be 50 characters long only"}).optional().or(zod.literal(""))
+     lastName : zod.string().trim().min(2, {message : "minimum 2 characters required in the last Name field"}).max(50,{message : "lastName can be 50 characters long only"}).optional().or(zod.literal(""))
 });
 
 const userSigninSchema = zod.object({
-     email : zod.string().email({message : "invalid email format"}),
-     password : zod.string().min(6,{message : "minimum 6 characters are required in the password field"}).max(50, {message : "maximum 50 characters are allowed in the password field"})
+     email : zod.string().trim().email({message : "invalid email format"}),
+     password : zod.string().trim().min(6,{message : "minimum 6 characters are required in the password field"}).max(50, {message : "maximum 50 characters are allowed in the password field"})
 })
 
 module.exports = {userSignupSchema, userSigninSchema};

@@ -1,15 +1,16 @@
 const express = require("express");
 const cookieParser = require("cookie-parser");
-require('dotenv').config({path : "../.env"});
+const  mongoose = require("mongoose");
 const cors = require("cors");
-const app = express();
-const port = 3000;
+require('dotenv').config({path : "../.env"});
+
 const authRouter = require("./routes/authRoutes");
 const profileRouter = require("./routes/profileRoutes");
 const connectionRequestRouter = require("./routes/connectionRequestRoutes");
 const userRouter = require("./routes/userRoutes");
-const  mongoose = require("mongoose");
 
+const app = express();
+const port = 3000;
 
 const corsOptions = {
   origin: "http://localhost:5173", 
@@ -33,8 +34,7 @@ async function connectDb(){
 connectDb();
 
 
-
-app.use("/",authRouter);
+app.use("/auth",authRouter);
 app.use("/",profileRouter);
 app.use("/",connectionRequestRouter);
 app.use("/",userRouter);
@@ -44,7 +44,7 @@ app.use((err,req,res,next)=>{
      if(err){
          return res.status(500).send({
              msg : "internal server issue",
-             detailError : err.message
+             error : err.message
          })
      }
 })
