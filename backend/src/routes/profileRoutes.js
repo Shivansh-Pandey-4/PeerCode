@@ -1,78 +1,83 @@
 const express = require("express");
-const router = express.Router();
 const userAuth = require("../middlewares/userAuth");
 const UserModel = require("../models/UserModel");
+const mongoose = require("mongoose");
+
 const profileEditSchema = require("../zod-validation/profileEditSchema");
 
+const router = express.Router();
 
-router.get("/profile/view",userAuth, async(req,res)=>{
-     const user_id = req.user_id;
-     try{
-         const userExist = await UserModel.findById(user_id);
-         if(!userExist){
-             return res.status(400).send({
-                 msg : "no user exist with this user_id"
-             })
-         }
+router.get("/view", userAuth, (req,res)=>{
+    
+         const user = req.user;
 
-         return res.send({
+         return res.json({
              success : true,
-             userExist
+             msg : "profile found successfully",
+             user
          })
-     }catch(err){
-         return res.status(500).send({
-             msg : "internal server issue",
-             detailError : err.message
-         })
-     }
 })
 
-router.patch("/profile/edit", userAuth, async (req,res)=>{
-    const allowedFields = ["firstName", "lastName", "age", "gender", "skills", "photoUrl", "about"]; 
 
-    const isEditAllowed = Object.keys(req.body).every((field) => allowedFields.includes(field));
+router.patch("/edit", userAuth, async (req, res)=>{
 
-    if(!isEditAllowed){
-         return res.status(400).send({
-             msg : "invalid edit request"
+      const result = profileEditSchema.safeParse(req.body);
+      if(!result.success){
+         return res.status(400).json({
+             success : false,
+             msg : "invalid credential provided",
+             error : result.error.issues
          })
-    }
-
-     const response = profileEditSchema.safeParse(req.body);
-
-     if(!response.success){
-         return res.status(400).send({
-             msg : "invalid credentail format",
-             detailError : response.error
-         })
-     }
-
-
-      const requestField = Object.keys(req.body);
-
-      const validFieldsToUpdate = requestField.filter((field) => allowedFields.includes(field));
-
-      const updateField = {};
-      validFieldsToUpdate.forEach((field) => updateField[field] = req.body[field]);
-
-      try{
-          const updateUser = await UserModel.findOneAndUpdate({_id : req.user_id},{ $set : updateField}, {runValidators : true, new : true});
-
-          if(!updateUser){
-              throw new Error("failded to update the user");
-          }
-          return res.send({
-             msg : "user updated successfully"
-          })
-
-      }catch(err){
-
-        return res.status(500).send({
-             msg : "internal server issue",
-             detailError : err.message
-        })
       }
 
+      try {
+            const data = result.data;
+            const allowedFields = ["firstName", "lastName", "age", "gender", "skills", "photoUrl", "about"];
+
+            const updateField = {};
+            for(let key of allowedFields){
+                 if(data[key] !== undefined){
+                     updateField[key] = data[key];
+                 }
+            }
+
+            if(Object.keys(updateField).length === 0){
+                  return res.status(400).json({
+                      success : false,
+                      msg : "provided fields are not allowed",
+                  })
+            }
+
+            const newUpdatedProfile = await UserModel.findByIdAndUpdate(req.user._id, { $set : updateField}, {runValidators : true, returnDocument : "after"}).select("-password");
+
+            if(!newUpdatedProfile){
+                 return res.status(400).json({
+                     success : false,
+                     msg : "user not found"
+                 })
+            }
+
+            return res.json({
+                 success : true,
+                 msg : "user profile updated successfully",
+                 newUpdatedProfile
+            })
+
+      } catch (err) {
+           if(err instanceof mongoose.MongooseError){
+                return res.status(400).json({
+                     success : false,
+                     msg : `failed to updated profile : ${err.cause}`,
+                     error : err.message
+                })
+           }
+
+           return res.status(500).json({
+               success : false,
+               msg : "something went wrong",
+               error : err.message
+           })
+      }
 })
 
 
