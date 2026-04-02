@@ -4,37 +4,34 @@ const userAuth = require("../middlewares/userAuth");
 const ConnectionRequestModel = require("../models/connectionRequestModel");
 const UserModel = require("../models/UserModel");
 const mongoose = require("mongoose");
+const requestSend = require("../middlewares/requestSend");
 
 
-router.post("/request/send/:status/:toUserId",userAuth, async(req,res)=>{
-        const {status, toUserId} = req.params;
+router.post("/send/:status/:toUserId", userAuth, requestSend, async(req,res)=>{
         
-        if( (status==="interested" || status==="ignored") && toUserId){
+            const status = req.params?.status;
+            const toUserId = req.params?.toUserId;
 
-            if (!mongoose.Types.ObjectId.isValid(toUserId)) {
-                    return res.status(400).send({
-                        msg: "Invalid userId format"
-                    });
-                }
-
-            const validUserId = await UserModel.findById(toUserId);
-            if(!validUserId){
-                 return res.status(400).send({
-                     msg : "invalid userId"
+            const userExist = await UserModel.findById(toUserId);
+            if(!userExist){
+                 return res.status(400).json({
+                     success : false,
+                     msg : "invalid userId provided"
                  })
             }
              
             const existingConnnectionRequest = await ConnectionRequestModel.findOne({
                  $or : [ {
-                     toUserId, fromUserId : req.user_id   
+                     toUserId, fromUserId : req.user._id   
                  },
                 {
-                    toUserId : req.user_id , fromUserId : toUserId
+                    toUserId : req.user._id , fromUserId : toUserId
                 } ]
             });
 
             if(existingConnnectionRequest){
-                 return res.status(400).send({
+                 return res.status(400).json({
+                    success : false,
                      msg : "already connection request exist"
                  })
             }
@@ -42,33 +39,27 @@ router.post("/request/send/:status/:toUserId",userAuth, async(req,res)=>{
 
             try{
                 const newConnection = await ConnectionRequestModel.create({
-                    toUserId , fromUserId : req.user_id , status
+                    toUserId , fromUserId : req.user._id , status
                 })
                 
-                if(!newConnection){
-                    return res.status(400).send({
-                        msg : "invalid connection request"
-                    })
-                }
 
-                res.send({
+                res.json({
+                    success : true,
                     msg : `connection request of ${status} sent successfully`
                 })   
 
             }catch(err){
-                 return res.status(500).send({
-                     msg : err ? err.message :"internal server issue",
+                 
+                 return res.status(500).json({
+                    success : false,
+                     msg :"something went wrong",
+                     error : err.message
                  })
             }
-        }else {
-             return res.status(400).send({
-                 msg : `invalid connection status :${status} or toUserId :${toUserId}`
-             })
         }
+);
 
-});
-
-router.post("/request/review/:status/:requestId", userAuth, async(req,res)=>{
+router.post("/review/:status/:requestId", userAuth, async(req,res)=>{
          const {status, requestId} = req.params;
          if((status === "accepted" || status === "rejected") && requestId){
             try{
