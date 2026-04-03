@@ -5,6 +5,7 @@ const ConnectionRequestModel = require("../models/connectionRequestModel");
 const UserModel = require("../models/UserModel");
 const mongoose = require("mongoose");
 const requestSend = require("../middlewares/requestSend");
+const requestReview = require("../middlewares/requestReview");
 
 
 router.post("/send/:status/:toUserId", userAuth, requestSend, async(req,res)=>{
@@ -49,6 +50,14 @@ router.post("/send/:status/:toUserId", userAuth, requestSend, async(req,res)=>{
                 })   
 
             }catch(err){
+
+                if(err instanceof mongoose.MongooseError){
+                     return res.status(400).json({
+                         success : false,
+                         msg : "failed to send request : " + err.cause,
+                         error : err.message
+                     })
+                }
                  
                  return res.status(500).json({
                     success : false,
@@ -59,19 +68,15 @@ router.post("/send/:status/:toUserId", userAuth, requestSend, async(req,res)=>{
         }
 );
 
-router.post("/review/:status/:requestId", userAuth, async(req,res)=>{
+
+router.post("/review/:status/:requestId", userAuth, requestReview, async(req,res)=>{
          const {status, requestId} = req.params;
-         if((status === "accepted" || status === "rejected") && requestId){
+         
             try{
-                if(!mongoose.Types.ObjectId.isValid(requestId)){
-                    return res.status(400).send({
-                        msg : "invalid request id"
-                    })
-                }
                 
                 const connectionRequest = await ConnectionRequestModel.find({
                     _id : requestId,
-                    toUserId : req.user_id,
+                    toUserId : req.user._id,
                     status : "interested"
                 })
                 
@@ -81,30 +86,37 @@ router.post("/review/:status/:requestId", userAuth, async(req,res)=>{
                     })
                 }
                 
-                const response = await ConnectionRequestModel.findOneAndUpdate({_id : requestId},{$set : {status : status}}, {runValidators : true, new : true});
+                const updatedConnection = await ConnectionRequestModel.findOneAndUpdate({_id : requestId},{$set : {status : status}}, {runValidators : true, new : true});
 
                 if(!response){
-                     throw new Error("Db operation failed");
+                     return res.status(400).json({
+                         success : false,
+                         msg : "connection not exist"
+                     })
                 }
 
-                return res.send({
+                return res.json({
+                    success : true,
                     msg : `connection request is ${status} successfully`
                 })
                 
             }catch(err){
-                  return res.status(500).send({
-                       msg : "internal server issue",
-                       detailError : err.message
+
+                if(err instanceof mongoose.MongooseError){
+                     return res.status(400).json({
+                         success : false,
+                         msg : `failed to review connections: ${err.cause}`,
+                         error : err.message 
+                     })
+                }
+
+                  return res.status(500).json({
+                       success : false,
+                       msg : "something went wrong",
+                       error : err.message
                   })
             }
-
-         }else {
-             return res.status(400).send({
-                 msg : `invalid status : ${status} or requestId : ${requestId}`
-             })
-         }
 });
-
 
 
 module.exports = router;
