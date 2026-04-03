@@ -6,4 +6,9 @@ const requestSendParamsSchema = zod.object({
      toUserId : zod.string().trim().min(1, "id not provided")
 })
 
-module.exports = {requestSendParamsSchema};
+const requestReviewParamsSchema = zod.object({
+      status : zod.enum(["accepted", "rejected"], "invalid status param provided"),
+      requestId : zod.string().trim().min(1, "id not provided")
+})
+
+module.exports = {requestSendParamsSchema, requestReviewParamsSchema};
